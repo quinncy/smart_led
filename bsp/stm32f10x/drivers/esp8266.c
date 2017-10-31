@@ -1,6 +1,7 @@
 #include "esp8266.h"
 #include "board.h"
 #include "usart.h"
+#include "echo.h"
 
 
 void esp8826_hw_init( void )

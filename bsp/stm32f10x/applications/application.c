@@ -155,7 +155,7 @@ void rt_init_thread_entry(void* parameter)
 #endif /* #ifdef RT_USING_RTGUI */
 		
 //-----------------------------------------
-		demo_thread_creat();	//启动两个线程
+//		demo_thread_creat();	//启动两个线程
 //------------------------------------------
 }
 
@@ -193,7 +193,7 @@ int rt_application_init(void)
     if (init_thread != RT_NULL)
         rt_thread_startup(init_thread);
 		
-//		usr_echo_init();
+		usr_echo_init();
 
     return 0;
 }
