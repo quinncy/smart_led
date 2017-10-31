@@ -453,6 +453,11 @@
               <FileType>1</FileType>
               <FilePath>.\drivers\esp8266.c</FilePath>
             </File>
+            <File>
+              <FileName>echo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\drivers\echo.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

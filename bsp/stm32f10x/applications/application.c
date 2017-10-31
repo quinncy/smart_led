@@ -49,9 +49,9 @@
 #include "test.h"
 //--------------------
 
-ALIGN(RT_ALIGN_SIZE)
-static rt_uint8_t led_stack[ 512 ];
-static struct rt_thread led_thread;
+//ALIGN(RT_ALIGN_SIZE)
+//static rt_uint8_t led_stack[ 512 ];
+//static struct rt_thread led_thread;
 
 //----------------------------------
 
@@ -155,7 +155,7 @@ void rt_init_thread_entry(void* parameter)
 #endif /* #ifdef RT_USING_RTGUI */
 		
 //-----------------------------------------
-//		demo_thread_creat();	//启动两个线程
+		demo_thread_creat();	//启动两个线程
 //------------------------------------------
 }
 
