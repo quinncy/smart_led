@@ -3,13 +3,24 @@
 #include "usart.h"
 #include "echo.h"
 
+//--------------------------------
+//定义端口号
+int PORT = 1007;
+
 
 void esp8826_hw_init( void )
 {
-		//--------------------------------
-		//定义端口号
-		const int PORT = 1007;
-	
+		//初始化复位引脚
+    GPIO_InitTypeDef GPIO_InitStructure;
+
+    RCC_APB2PeriphClockCmd(ESP_RST_rcc,ENABLE);
+
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_Out_PP;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+
+    GPIO_InitStructure.GPIO_Pin   = ESP_RST_pin;
+    GPIO_Init(ESP_RST_gpio, &GPIO_InitStructure);
+		
 	
 		rt_kprintf("AT\r\n");
 		rt_thread_delay( RT_TICK_PER_SECOND/10 );

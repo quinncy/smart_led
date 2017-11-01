@@ -13,6 +13,11 @@ static struct rt_thread esp8266_thread;
 
 /* 信号量控制块 */
 struct rt_semaphore lock_sem;
+struct rt_semaphore send_lock_sem;//用于阻塞mlx线程
+
+//全局变量
+extern vu8 esp_rst_flag;
+extern vu8 esp_rst_cnt;
 
 rt_err_t demo_thread_creat(void)
 {
@@ -25,6 +30,14 @@ rt_err_t demo_thread_creat(void)
         rt_kprintf("init locksem failed.\n");
         return -1;
     }
+		
+    /* 初始化静态信号量，初始值是0 */
+    result = rt_sem_init(&send_lock_sem, "sendlocksem", 0, RT_IPC_FLAG_FIFO);
+    if (result != RT_EOK)
+    {
+        rt_kprintf("init sendlocksem failed.\n");
+        return -1;
+    }		
 
 
     /* 创建mlx线程 ： 优先级 16 ，时间片 5个系统滴答 */
@@ -54,12 +67,13 @@ rt_err_t demo_thread_creat(void)
 
 void mlx_thread_entry(void* paramete)
 {	
-		rt_thread_delay( RT_TICK_PER_SECOND * 5 );
+		/* 以永久等待方式获取信号量*/
+		rt_sem_take(&send_lock_sem, RT_WAITING_FOREVER);
 	  while(1)
 		{
 				rt_thread_delay( RT_TICK_PER_SECOND/1 );
-			
-				rt_sem_release(&lock_sem);//释放一次信号量
+				if(!esp_rst_flag)
+						rt_sem_release(&lock_sem);//释放一次信号量
 				
 		}
 }
@@ -67,16 +81,15 @@ void mlx_thread_entry(void* paramete)
 void esp8266_thread_entry(void* parameter)
 {
 		vu8 led_state = 0;	
-//		//初始化8266
-//		rt_thread_delay( RT_TICK_PER_SECOND/2 );
-//		esp8826_hw_init();
-	
-		
+
     /* 无限循环*/
     while (1)
     {
         /* 以永久等待方式获取信号量*/
         rt_sem_take(&lock_sem, RT_WAITING_FOREVER);
+			
+				esp_rst_cnt++; //复位计数变量自增
+			
         /* 当得到信号量以后才有可能执行下面程序*/
         led_state ^=1;
         if (led_state!=0)

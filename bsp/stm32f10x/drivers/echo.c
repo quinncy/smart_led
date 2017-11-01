@@ -1,6 +1,14 @@
 #include "echo.h"
 #include "led.h"
 #include "esp8266.h"
+#include "rthw.h"
+
+extern struct rt_semaphore send_lock_sem;//用于阻塞mlx线程
+extern int PORT;
+
+//全局变量
+vu8 esp_rst_flag = 0;
+vu8 esp_rst_cnt = 0;
 
  
 struct rx_msg
@@ -51,6 +59,7 @@ void usr_echo_thread_entry(void* parameter)
         rt_device_open(device, RT_DEVICE_OFLAG_RDWR | RT_DEVICE_FLAG_INT_RX);
     }
    
+		rt_sem_release(&send_lock_sem);//释放一次信号量
     while(1)
     {
 				rt_thread_delay( RT_TICK_PER_SECOND * 3 );
@@ -71,26 +80,57 @@ void usr_echo_thread_entry(void* parameter)
            
             rx_length = rt_device_read(msg.dev, 0, &uart_rx_buffer[0], rx_length);
             uart_rx_buffer[rx_length] = '\0';
-						if(rx_length == 0)
-								continue;
             // ????????1
-						rt_kprintf("rx_length = %d, uart_rx_buffer[1] = %c\r\n", rx_length, uart_rx_buffer[1]);
+						
+						//****************OTA代码***********************************
+						if(rx_length != 0)
+								rt_kprintf("rx_length = %d, uart_rx_buffer[1] = %c\r\n", rx_length, uart_rx_buffer[1]);
 //            rt_device_write(device, 0, &uart_rx_buffer[0], rx_length);
 						if(uart_rx_buffer[1] == 'n' && rx_length == 5)
 						{
+								esp_rst_cnt = 0; //重启计数清零
+							
 								led_state ^=1;
 								if (led_state!=0)
 								{
-											rt_hw_led_on(0);
-//										rt_kprintf(" get OTA 1 \r\n");
+//											rt_hw_led_on(0);
+										rt_kprintf(" get OTA 1 \r\n");
 								}
 								else
 								{
-											rt_hw_led_off(0);
-//										rt_kprintf(" get OTA 0 \r\n");
+//											rt_hw_led_off(0);
+										rt_kprintf(" get OTA 0 \r\n");
 								}
 						}
+						else
+						{
+										
+						}
         }
+				
+				if(esp_rst_cnt > 10)//如果超过10次没有收到，证明连接已经中断                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+				{
+						esp_rst_flag = 1;//关闭wifi发送操作
+						//进行重连操作
+						//1.复位wifi引脚
+						GPIO_ResetBits(ESP_RST_gpio, ESP_RST_pin);
+						rt_thread_delay( RT_TICK_PER_SECOND / 5 );
+						GPIO_SetBits(ESP_RST_gpio, ESP_RST_pin);
+						
+						rt_thread_delay( RT_TICK_PER_SECOND * 5 );//复位后延时一段时间
+						//2.进行AT指令连接
+						rt_kprintf("AT+CIPSTART=\"TCP\",\"192.168.1.10\",%d\r\n", PORT);
+						rt_thread_delay( RT_TICK_PER_SECOND * 3 );
+					
+						rt_kprintf("AT+CIPMODE=1\r\n");
+						rt_thread_delay( RT_TICK_PER_SECOND/10 );
+					
+						rt_kprintf("AT+CIPSEND\r\n");
+						rt_thread_delay( RT_TICK_PER_SECOND/10 );
+				
+						esp_rst_flag = 0;//打开wifi发送操作
+						esp_rst_cnt = 0;//计数值清零
+				}
     }
 }
 // ?????????
