@@ -20,6 +20,7 @@
 #include "stm32f10x_fsmc.h"
 #include "board.h"
 #include "usart.h"
+#include "I2C2.h"
 
 #ifdef  RT_USING_COMPONENTS_INIT
 #include <components.h>
@@ -191,7 +192,9 @@ void rt_hw_board_init(void)
     rt_hw_usart_init();
     rt_console_set_device(RT_CONSOLE_DEVICE_NAME);
 	
+		MLX90621_WorkInit();
 
+    BackgroundInit();
 
 #ifdef RT_USING_COMPONENTS_INIT
     rt_components_board_init();

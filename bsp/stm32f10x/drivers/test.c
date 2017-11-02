@@ -1,4 +1,5 @@
 #include "test.h"
+#include "I2C2.h"
 #include <rthw.h>
 
 /*  变量分配4字节对齐 */
@@ -54,11 +55,13 @@ rt_err_t demo_thread_creat(void)
 
 void mlx_thread_entry(void* paramete)
 {	
-		rt_thread_delay( RT_TICK_PER_SECOND * 5 );
+//		rt_thread_delay( RT_TICK_PER_SECOND * 5 );
 	  while(1)
 		{
-				rt_thread_delay( RT_TICK_PER_SECOND/1 );
-			
+				rt_thread_delay( RT_TICK_PER_SECOND/10 );
+			rt_enter_critical();
+				MLX90621IR_ReadSead();
+			rt_exit_critical();
 				rt_sem_release(&lock_sem);//释放一次信号量
 				
 		}
@@ -78,7 +81,7 @@ void esp8266_thread_entry(void* parameter)
         /* 以永久等待方式获取信号量*/
         rt_sem_take(&lock_sem, RT_WAITING_FOREVER);
         /* 当得到信号量以后才有可能执行下面程序*/
-        led_state ^=1;
+//        led_state ^=1;
         if (led_state!=0)
         {
 //            rt_hw_led_on(0);
