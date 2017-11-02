@@ -1,5 +1,6 @@
 #include "test.h"
 #include <rthw.h>
+#include "I2C2.h"
 
 /*  变量分配4字节对齐 */
 ALIGN(RT_ALIGN_SIZE)
@@ -71,7 +72,11 @@ void mlx_thread_entry(void* paramete)
 		rt_sem_take(&send_lock_sem, RT_WAITING_FOREVER);
 	  while(1)
 		{
-				rt_thread_delay( RT_TICK_PER_SECOND/1 );
+				rt_thread_delay( RT_TICK_PER_SECOND/10 );
+			
+				rt_enter_critical();
+				MLX90621IR_ReadSead();
+				rt_exit_critical();
 				if(!esp_rst_flag)
 						rt_sem_release(&lock_sem);//释放一次信号量
 				
