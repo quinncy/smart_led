@@ -468,6 +468,11 @@
               <FileType>1</FileType>
               <FilePath>.\drivers\I2C_init.c</FilePath>
             </File>
+            <File>
+              <FileName>flash.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\drivers\flash.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
