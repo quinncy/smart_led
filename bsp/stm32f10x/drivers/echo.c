@@ -2,6 +2,8 @@
 #include "led.h"
 #include "esp8266.h"
 #include "rthw.h"
+#include "I2C2.h"
+#include "flash.h"
 
 extern struct rt_semaphore send_lock_sem;//用于阻塞mlx线程
 extern int PORT;
@@ -9,6 +11,10 @@ extern int PORT;
 //全局变量
 vu8 esp_rst_flag = 0;
 vu8 esp_rst_cnt = 0;
+
+//定义OTA包长
+#define REV_DATA_LENGTH 5
+#define TICK_DATA_LENGTH 2
 
  
 struct rx_msg
@@ -18,7 +24,7 @@ struct rx_msg
 };
  
 static struct rt_messagequeue  rx_mq;
-static char uart_rx_buffer[150];
+static unsigned char uart_rx_buffer[150];
 static char msg_pool[1024];
  
 // ????????
@@ -72,7 +78,7 @@ void usr_echo_thread_entry(void* parameter)
        
         if (result == RT_EOK)
         {
-            rt_uint32_t rx_length = 5;
+            rt_uint32_t rx_length = REV_DATA_LENGTH;
 						
            
 //            rx_length = (sizeof(uart_rx_buffer) - 1) > msg.size ?
@@ -83,28 +89,22 @@ void usr_echo_thread_entry(void* parameter)
             // ????????1
 						
 						//****************OTA代码***********************************
-						if(rx_length != 0)
-								rt_kprintf("rx_length = %d, uart_rx_buffer[1] = %c\r\n", rx_length, uart_rx_buffer[1]);
+//						if(rx_length != 0)
+//								rt_kprintf("rx_length = %d, uart_rx_buffer[1] = %c\r\n", rx_length, uart_rx_buffer[1]);
 //            rt_device_write(device, 0, &uart_rx_buffer[0], rx_length);
-						if(uart_rx_buffer[1] == 'n' && rx_length == 5)
+						if((uart_rx_buffer[0] == 0x55) && (uart_rx_buffer[1] == 0xaa) && (rx_length == REV_DATA_LENGTH))//接收到OTA数据包
 						{
 								esp_rst_cnt = 0; //重启计数清零
 							
-								led_state ^=1;
-								if (led_state!=0)
-								{
-//											rt_hw_led_on(0);
-										rt_kprintf(" get OTA 1 \r\n");
-								}
-								else
-								{
-//											rt_hw_led_off(0);
-										rt_kprintf(" get OTA 0 \r\n");
-								}
+								//修改相应参数
+								BEIGHBOR = uart_rx_buffer[3];
+								THREDHOLD = uart_rx_buffer[4];
+								//将数据写入flash
+								WriteFlashOneWord(0, uart_rx_buffer[0] + (uart_rx_buffer[1] << 8) + (uart_rx_buffer[2] << 16) + (uart_rx_buffer[3] << 24));
 						}
-						else
+						else if((uart_rx_buffer[0] == 'O') && (uart_rx_buffer[1] == 'K') && (rx_length == TICK_DATA_LENGTH))//接收到心跳包
 						{
-										
+								esp_rst_cnt = 0; //重启计数清零
 						}
         }
 				

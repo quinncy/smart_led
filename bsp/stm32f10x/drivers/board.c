@@ -29,6 +29,7 @@
 
 //-------------------------
 #include "esp8266.h"
+#include "flash.h"
 
 /**
  * @addtogroup STM32
@@ -180,6 +181,7 @@ void SysTick_Handler(void)
  */
 void rt_hw_board_init(void)
 {
+		unsigned char temp_data[4];
     /* NVIC Configuration */
     NVIC_Configuration();
 
@@ -192,6 +194,18 @@ void rt_hw_board_init(void)
 
     rt_hw_usart_init();
     rt_console_set_device(RT_CONSOLE_DEVICE_NAME);
+		
+		//¶Á³öflashÊý¾Ý
+		ReadFlashNBtye(0, &temp_data[0], 4);
+		if(temp_data[0] == 0x55 && temp_data[1] == 0xaa)
+		{
+				BEIGHBOR = temp_data[2];
+				THREDHOLD = temp_data[3];
+				if(temp_data[2] > 1)
+						rt_kprintf("LED ON");
+				else
+						rt_kprintf("LED OFF");
+		}
 	
 		MLX90621_WorkInit();
 

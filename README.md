@@ -1,5 +1,10 @@
 # RT-Thread #
 
+V1.7代码
+完成了红外数据采集，wifi模块发送，以及OTA，flash读写功能
+红外传输数据包，OTA数据包以及心跳包的格式书写
+在旧版板子与PC上位机串口通信中完成测试
+
 [![Build Status](https://travis-ci.org/RT-Thread/rt-thread.png)](https://travis-ci.org/RT-Thread/rt-thread)
 [![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/RT-Thread/rt-thread?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -43,9 +48,3 @@ RT-Thread RTOS uses [scons](http://www.scons.org) as its building system. Theref
 
 Thank all of RT-Thread Developers. 
 
-主要完成了esp8266 AT指令初始化，并且完成了项目软件大体框架
-主要分为两个线程，一个是延时线程（初始化esp8266 TCP连接），一个是执行线程（LED闪烁）
-利用esp8266线程完成初始化，然后进行延时1s操作
-利用LED线程完成灯光闪烁功能
-
-后期需要将红外数据采集加入到延时线程里，执行线程主要完成esp8266初始化以及发送功能

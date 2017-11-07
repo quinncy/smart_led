@@ -6,10 +6,8 @@
 #include "string.h"
 #include "math.h"
 
-#define NROWS           4
-#define NCOLS           16
-#define BEIGHBOR         1
-#define THREDHOLD        20
+unsigned char BEIGHBOR = 1;
+unsigned char THREDHOLD = 20;
 
 //调度参数定义
 #define ALL_ZERO  1     //全0 代表没人
@@ -814,53 +812,53 @@ void MLX90621IR_ReadSead(void)
                 
 //		USART2_Send_IRdata();
                 //判断是否和上次数据一致
-                for(i = 0; i < 8; i++)
-                {
-                    if(Binaryzation_8byte[i] != last_Binaryzation_8byte[i])
-                    {
-                        Time_flag = DATA_CHANDE;
-                        break;
-                    }
-                }
-                
-                //如果数据和上次一致
-                if(Time_flag != DATA_CHANDE)
-                {
-                    //判断数据是否是不是全零
-                    for(i = 0; i < 8; i++)
-                    {
-                        if(Binaryzation_8byte[i] != 0)
-                        {
-                            Time_flag = NOT_ALL_ZERO;
-                            break;
-                        }
-                        else
-                        {
-                            Time_flag = ALL_ZERO;
-                        }
-                    }
-                }
-                
-                switch(Time_flag)
-                {
-                    case ALL_ZERO: Time_cnt++; break;
-                    case NOT_ALL_ZERO: Time_cnt += 15;break;
-                    case DATA_CHANDE: Time_cnt = 30;break;
-                    default :Time_cnt++;break;
-                }
-                            
-                if(Time_cnt >= 30)
-                {
-//                    USART2_Send_IRdata();
-                    Time_cnt = 0;
-                    Time_flag = 0;
-                    
-                    //将数据赋值到last数组里
-                    for(i = 0; i < 8; i++)
-                    {
-                          last_Binaryzation_8byte[i] = Binaryzation_8byte[i];
-                    }
-                }            
+//                for(i = 0; i < 8; i++)
+//                {
+//                    if(Binaryzation_8byte[i] != last_Binaryzation_8byte[i])
+//                    {
+//                        Time_flag = DATA_CHANDE;
+//                        break;
+//                    }
+//                }
+//                
+//                //如果数据和上次一致
+//                if(Time_flag != DATA_CHANDE)
+//                {
+//                    //判断数据是否是不是全零
+//                    for(i = 0; i < 8; i++)
+//                    {
+//                        if(Binaryzation_8byte[i] != 0)
+//                        {
+//                            Time_flag = NOT_ALL_ZERO;
+//                            break;
+//                        }
+//                        else
+//                        {
+//                            Time_flag = ALL_ZERO;
+//                        }
+//                    }
+//                }
+//                
+//                switch(Time_flag)
+//                {
+//                    case ALL_ZERO: Time_cnt++; break;
+//                    case NOT_ALL_ZERO: Time_cnt += 15;break;
+//                    case DATA_CHANDE: Time_cnt = 30;break;
+//                    default :Time_cnt++;break;
+//                }
+//                            
+//                if(Time_cnt >= 30)
+//                {
+////                    USART2_Send_IRdata();
+//                    Time_cnt = 0;
+//                    Time_flag = 0;
+//                    
+//                    //将数据赋值到last数组里
+//                    for(i = 0; i < 8; i++)
+//                    {
+//                          last_Binaryzation_8byte[i] = Binaryzation_8byte[i];
+//                    }
+//                }            
                 
 //		}
 //		USART2_Send_Byte(Res);

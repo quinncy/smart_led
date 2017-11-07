@@ -15,6 +15,13 @@
 
 #include "stdbool.h" 
 
+#define NROWS           4
+#define NCOLS           16
+
+
+extern unsigned char BEIGHBOR;
+extern unsigned char THREDHOLD;
+
 
 /* Exported types ------------------------------------------------------------*/
 
