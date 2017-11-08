@@ -50,13 +50,13 @@ void usr_echo_thread_entry(void* parameter)
     rt_err_t result = RT_EOK;
 	
 		//初始化LED
-	  rt_hw_led_init();
+//	  rt_hw_led_init();
 		//初始化8266
 		rt_thread_delay( RT_TICK_PER_SECOND/2 );
 		esp8826_hw_init();
    
         // ?RT???????1??
-    device = rt_device_find("uart1");
+    device = rt_device_find("uart3");
     if (device != RT_NULL)
     {
                            // ?????????????
