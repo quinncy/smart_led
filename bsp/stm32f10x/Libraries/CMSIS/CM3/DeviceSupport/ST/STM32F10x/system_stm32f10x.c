@@ -161,7 +161,8 @@
 #elif defined SYSCLK_FREQ_72MHz
   uint32_t SystemCoreClock         = SYSCLK_FREQ_72MHz;        /*!< System Clock Frequency (Core Clock) */
 #else /*!< HSI Selected as System Clock source */
-  uint32_t SystemCoreClock         = HSI_VALUE;        /*!< System Clock Frequency (Core Clock) */
+//  uint32_t SystemCoreClock         = HSI_VALUE;        /*!< System Clock Frequency (Core Clock) */
+uint32_t SystemCoreClock         = 64000000;
 #endif
 
 __I uint8_t AHBPrescTable[16] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 6, 7, 8, 9};
@@ -432,6 +433,22 @@ static void SetSysClock(void)
   SetSysClockTo72();
 #endif
  
+	
+//*********************************************************
+	 RCC_DeInit(); /*???RCC????????? */ 
+   RCC_HSICmd(ENABLE); 
+   while(RCC_GetFlagStatus(RCC_FLAG_HSIRDY)== RESET);//??HSI?? 
+   RCC_HCLKConfig(RCC_SYSCLK_Div1);   /*??AHB??(HCLK) RCC_SYSCLK_Div1——AHB?? = ???*/  
+   RCC_PCLK2Config(RCC_HCLK_Div1);   /* ????AHB??(PCLK2)RCC_HCLK_Div1——APB2?? = HCLK*/     
+   RCC_PCLK1Config(RCC_HCLK_Div2); /*????AHB??(PCLK1)RCC_HCLK_Div2——APB1?? = HCLK / 2*/      
+   FLASH_SetLatency(FLASH_Latency_2);   /*??FLASH??????????FLASH_Latency_2  2????*/   
+   FLASH_PrefetchBufferCmd(FLASH_PrefetchBuffer_Enable);  /*??FLASH???????,???????*/ 
+   RCC_PLLConfig(RCC_PLLSource_HSI_Div2, RCC_PLLMul_16);/*??PLL????????,???8/2*16=64Mhz*/    
+   RCC_PLLCmd(ENABLE); 	 /*??PLL */ 
+   while(RCC_GetFlagStatus(RCC_FLAG_PLLRDY) == RESET) ; /*?????RCC???(PLL?????)????*/    
+   RCC_SYSCLKConfig(RCC_SYSCLKSource_PLLCLK);  /*??????(SYSCLK) */  
+   while(RCC_GetSYSCLKSource() != 0x08);     /*0x08:PLL?????? */	    
+//*********************************************************	
  /* If none of the define above is enabled, the HSI is used as System clock
     source (default after reset) */ 
 }

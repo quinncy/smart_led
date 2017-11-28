@@ -86,7 +86,7 @@ void mlx_thread_entry(void* paramete)
 		rt_sem_take(&send_lock_sem, RT_WAITING_FOREVER);
 	  while(1)
 		{
-				rt_thread_delay( RT_TICK_PER_SECOND/10 );
+				rt_thread_delay( RT_TICK_PER_SECOND/1 );
 			
 				rt_enter_critical();
 				MLX90621IR_ReadSead();
@@ -103,7 +103,7 @@ void esp8266_thread_entry(void* parameter)
 
     rt_device_t device;
 
-		device = rt_device_find("uart1");
+		device = rt_device_find("uart3");
     if (device != RT_NULL)
     {
                            // ?????????????

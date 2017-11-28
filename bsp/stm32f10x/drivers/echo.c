@@ -16,6 +16,8 @@ vu8 esp_rst_cnt = 0;
 #define REV_DATA_LENGTH 5
 #define TICK_DATA_LENGTH 2
 
+
+
  
 struct rx_msg
 {
@@ -26,6 +28,9 @@ struct rx_msg
 static struct rt_messagequeue  rx_mq;
 static unsigned char uart_rx_buffer[150];
 static char msg_pool[1024];
+
+rt_uint32_t debug_length;
+unsigned char OTA_buffer[150];
  
 // ????????
 rt_err_t uart_input(rt_device_t dev, rt_size_t size)
@@ -52,7 +57,6 @@ void usr_echo_thread_entry(void* parameter)
 		//初始化LED
 //	  rt_hw_led_init();
 		//初始化8266
-		rt_thread_delay( RT_TICK_PER_SECOND/2 );
 		esp8826_hw_init();
    
         // ?RT???????1??
@@ -68,7 +72,6 @@ void usr_echo_thread_entry(void* parameter)
 		rt_sem_release(&send_lock_sem);//释放一次信号量
     while(1)
     {
-				rt_thread_delay( RT_TICK_PER_SECOND * 3 );
                            // ???????????????????????
         result = rt_mq_recv(&rx_mq, &msg, sizeof(struct rx_msg), 80);
         if (result == -RT_ETIMEOUT)
@@ -78,21 +81,17 @@ void usr_echo_thread_entry(void* parameter)
        
         if (result == RT_EOK)
         {
-            rt_uint32_t rx_length = REV_DATA_LENGTH;
+            rt_uint32_t rx_length = 64;
 						
-           
-//            rx_length = (sizeof(uart_rx_buffer) - 1) > msg.size ?
-//                msg.size : sizeof(uart_rx_buffer) - 1;
-           
             rx_length = rt_device_read(msg.dev, 0, &uart_rx_buffer[0], rx_length);
             uart_rx_buffer[rx_length] = '\0';
-            // ????????1
-						
-						//****************OTA代码***********************************
-//						if(rx_length != 0)
-//								rt_kprintf("rx_length = %d, uart_rx_buffer[1] = %c\r\n", rx_length, uart_rx_buffer[1]);
+
+//						//****************OTA代码***********************************
+////						if(rx_length != 0)
+////								rt_kprintf("rx_length = %d, uart_rx_buffer[1] = %c\r\n", rx_length, uart_rx_buffer[1]);
 //            rt_device_write(device, 0, &uart_rx_buffer[0], rx_length);
-						if((uart_rx_buffer[0] == 0x55) && (uart_rx_buffer[1] == 0xaa) && (rx_length == REV_DATA_LENGTH))//接收到OTA数据包
+									
+						if((uart_rx_buffer[0] == 0x55) && (uart_rx_buffer[1] == 0xaa))//接收到OTA数据包
 						{
 								esp_rst_cnt = 0; //重启计数清零
 							
@@ -100,37 +99,47 @@ void usr_echo_thread_entry(void* parameter)
 								BEIGHBOR = uart_rx_buffer[3];
 								THREDHOLD = uart_rx_buffer[4];
 								//将数据写入flash
-								WriteFlashOneWord(0, uart_rx_buffer[0] + (uart_rx_buffer[1] << 8) + (uart_rx_buffer[2] << 16) + (uart_rx_buffer[3] << 24));
+								WriteFlashOneWord(0, uart_rx_buffer[0] + (uart_rx_buffer[1] << 8) + (uart_rx_buffer[3] << 16) + (uart_rx_buffer[4] << 24));
+								//回传数据
+//								rt_device_write(device, 0, &uart_rx_buffer[0], REV_DATA_LENGTH);
+								//OTA数据回复确认
+								rt_kprintf("ota ok,%x,%x\r\n",BEIGHBOR,THREDHOLD);
 						}
-						else if((uart_rx_buffer[0] == 'O') && (uart_rx_buffer[1] == 'K') && (rx_length == TICK_DATA_LENGTH))//接收到心跳包
+						else if((rx_length != 0))//接收到心跳包
 						{
 								esp_rst_cnt = 0; //重启计数清零
 						}
+						
+						if(esp_rst_cnt > 10)//如果超过10次没有收到，证明连接已经中断                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+						{
+								esp_rst_flag = 1;//关闭wifi发送操作
+								//进行重连操作
+								//1.复位wifi引脚
+								GPIO_ResetBits(ESP_RST_gpio, ESP_RST_pin);
+								rt_thread_delay( RT_TICK_PER_SECOND / 5 );
+								GPIO_SetBits(ESP_RST_gpio, ESP_RST_pin);
+								
+								rt_thread_delay( RT_TICK_PER_SECOND * 5 );//复位后延时一段时间
+								//2.进行AT指令连接
+		//						rt_kprintf("AT+CIPSTART=\"TCP\",\"192.168.2.83\",%d\r\n", PORT);
+								rt_kprintf("AT+CIPSTART=\"TCP\",\"192.168.1.101\",%d\r\n", PORT);
+								rt_thread_delay( RT_TICK_PER_SECOND * 3 );
+							
+								rt_kprintf("AT+CIPMODE=1\r\n");
+								rt_thread_delay( RT_TICK_PER_SECOND/10 );
+							
+								rt_kprintf("AT+CIPSEND\r\n");
+								rt_thread_delay( RT_TICK_PER_SECOND/10 );
+						
+								esp_rst_flag = 0;//打开wifi发送操作
+								esp_rst_cnt = 0;//计数值清零
+						}
+
+							
         }
 				
-				if(esp_rst_cnt > 10)//如果超过10次没有收到，证明连接已经中断                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-				{
-						esp_rst_flag = 1;//关闭wifi发送操作
-						//进行重连操作
-						//1.复位wifi引脚
-						GPIO_ResetBits(ESP_RST_gpio, ESP_RST_pin);
-						rt_thread_delay( RT_TICK_PER_SECOND / 5 );
-						GPIO_SetBits(ESP_RST_gpio, ESP_RST_pin);
-						
-						rt_thread_delay( RT_TICK_PER_SECOND * 5 );//复位后延时一段时间
-						//2.进行AT指令连接
-						rt_kprintf("AT+CIPSTART=\"TCP\",\"192.168.1.10\",%d\r\n", PORT);
-						rt_thread_delay( RT_TICK_PER_SECOND * 3 );
-					
-						rt_kprintf("AT+CIPMODE=1\r\n");
-						rt_thread_delay( RT_TICK_PER_SECOND/10 );
-					
-						rt_kprintf("AT+CIPSEND\r\n");
-						rt_thread_delay( RT_TICK_PER_SECOND/10 );
 				
-						esp_rst_flag = 0;//打开wifi发送操作
-						esp_rst_cnt = 0;//计数值清零
-				}
+				rt_thread_delay( RT_TICK_PER_SECOND * 3 );
     }
 }
 // ?????????

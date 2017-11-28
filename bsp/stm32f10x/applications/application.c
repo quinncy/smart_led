@@ -155,7 +155,7 @@ void rt_init_thread_entry(void* parameter)
 #endif /* #ifdef RT_USING_RTGUI */
 		
 //-----------------------------------------
-		demo_thread_creat();	//启动两个线程
+//		demo_thread_creat();	//启动两个线程
 //------------------------------------------
 }
 

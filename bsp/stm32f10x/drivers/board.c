@@ -201,10 +201,6 @@ void rt_hw_board_init(void)
 		{
 				BEIGHBOR = temp_data[2];
 				THREDHOLD = temp_data[3];
-				if(temp_data[2] > 1)
-						rt_kprintf("LED ON");
-				else
-						rt_kprintf("LED OFF");
 		}
 	
 		MLX90621_WorkInit();
