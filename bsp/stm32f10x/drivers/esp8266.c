@@ -5,7 +5,7 @@
 
 //--------------------------------
 //¶¨Òå¶Ë¿ÚºÅ
-int PORT = 1010;
+int PORT = 9999;
 
  
 void esp8826_hw_init( void )
@@ -33,12 +33,13 @@ void esp8826_hw_init( void )
 		rt_thread_delay( RT_TICK_PER_SECOND/10 );
 	
 //		rt_kprintf("AT+CWJAP_DEF=\"PHICOMM_2.4G_A2A8\",\"1234567890\"\r\n");
-		rt_kprintf("AT+CWJAP_DEF=\"TCPtest\",\"1234567890\"\r\n");
+//		rt_kprintf("AT+CWJAP_DEF=\"TCPtest\",\"1234567890\"\r\n");
+		rt_kprintf("AT+CWJAP_DEF=\"ANTIS\",\"123456789\"\r\n");
 //		rt_kprintf("AT+CWJAP_DEF=\"H3C\"\r\n");
 		rt_thread_delay( RT_TICK_PER_SECOND * 10 );
 	
 //		rt_kprintf("AT+CIPSTART=\"TCP\",\"192.168.2.70\",%d\r\n", PORT);
-		rt_kprintf("AT+CIPSTART=\"TCP\",\"192.168.1.101\",%d\r\n", PORT);
+		rt_kprintf("AT+CIPSTART=\"TCP\",\"192.168.1.6\",%d\r\n", PORT);
 //		rt_kprintf("AT+CIPSTART=\"TCP\",\"169.254.213.95\",%d\r\n", PORT);
 		rt_thread_delay( RT_TICK_PER_SECOND * 3 );
 	

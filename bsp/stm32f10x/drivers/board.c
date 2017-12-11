@@ -203,9 +203,9 @@ void rt_hw_board_init(void)
 				THREDHOLD = temp_data[3];
 		}
 	
-		MLX90621_WorkInit();
+//		MLX90621_WorkInit();
 
-    BackgroundInit();
+//    BackgroundInit();
 
 #ifdef RT_USING_COMPONENTS_INIT
     rt_components_board_init();
