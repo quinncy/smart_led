@@ -30,6 +30,7 @@
 //-------------------------
 #include "esp8266.h"
 #include "flash.h"
+#include "echo.h"
 
 /**
  * @addtogroup STM32
@@ -203,9 +204,10 @@ void rt_hw_board_init(void)
 				THREDHOLD = temp_data[3];
 		}
 	
-//		MLX90621_WorkInit();
-
-//    BackgroundInit();
+#if defined(USING_MLX90621)
+		MLX90621_WorkInit();
+    BackgroundInit();
+#endif
 
 #ifdef RT_USING_COMPONENTS_INIT
     rt_components_board_init();

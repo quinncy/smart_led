@@ -21,7 +21,14 @@ vu8 esp_rst_cnt = 0;
 #define WIFI_CONNECT_CMD 	"AT+CWJAP_DEF=\"ANTIS1\",\"123456789\"\r\n"
 
 //IP及端口设置
-#define WIFI_IP_PORT  "AT+CIPSTART=\"TCP\",\"192.168.1.2\",777\r\n"
+#define WIFI_IP_PORT  "AT+CIPSTART=\"TCP\",\"192.168.1.6\",9999\r\n"
+
+//重启复位计数值
+const vu8 RST_WIFI_NUM = 3;//如果三次AT指令未生效，则重新启动WIFI模块
+vu8 rst_wifi_num = 0;
+
+
+
 
 
 
@@ -92,25 +99,39 @@ void usr_echo_thread_entry(void* parameter)
     }
    
 		//初始化8266
-		
-
-		
-		
-		rt_thread_delay( RT_TICK_PER_SECOND/2 );
-		
-		rt_kprintf("AT\r\n");
-		rt_thread_delay( RT_TICK_PER_SECOND/5 );
-	
-		rt_kprintf("AT+CWMODE_DEF=1\r\n");
-		rt_thread_delay( RT_TICK_PER_SECOND/5 );
-		result = rt_mq_recv(&rx_mq, &msg, sizeof(struct rx_msg), 80);
-		if (result == RT_EOK)
+		//WIFI连接大循环
+		while(1)
 		{
-				rx_length_tmp = rt_device_read(msg.dev, 0, &uart_rx_buffer[0], rx_length_tmp);
-				uart_rx_buffer[rx_length_tmp] = '\0';
-		}
-		while(rx_length_tmp < 2 || uart_rx_buffer[rx_length_tmp - 4] != 'O' || uart_rx_buffer[rx_length_tmp - 3] != 'K')
-		{
+				GPIO_ResetBits(ESP_RST_gpio, ESP_RST_pin);
+				rt_thread_delay( RT_TICK_PER_SECOND / 5 );
+				GPIO_SetBits(ESP_RST_gpio, ESP_RST_pin);
+				
+				rt_thread_delay( RT_TICK_PER_SECOND * 5 );//复位后延时一段时间		
+				
+				rt_thread_delay( RT_TICK_PER_SECOND/2 );
+				
+				rx_length_tmp = 128;
+				rt_kprintf("AT\r\n");
+				rt_thread_delay( RT_TICK_PER_SECOND/5 );
+				result = rt_mq_recv(&rx_mq, &msg, sizeof(struct rx_msg), 80);
+				if (result == RT_EOK)
+				{
+						rx_length_tmp = rt_device_read(msg.dev, 0, &uart_rx_buffer[0], rx_length_tmp);
+						uart_rx_buffer[rx_length_tmp] = '\0';
+				}
+				while(rx_length_tmp < 2 || uart_rx_buffer[rx_length_tmp - 4] != 'O' || uart_rx_buffer[rx_length_tmp - 3] != 'K')
+				{
+						rt_kprintf("AT\r\n");
+						rt_thread_delay( RT_TICK_PER_SECOND/5 );
+						result = rt_mq_recv(&rx_mq, &msg, sizeof(struct rx_msg), 80);
+						if (result == RT_EOK)
+						{
+								rx_length_tmp = rt_device_read(msg.dev, 0, &uart_rx_buffer[0], rx_length_tmp);
+								uart_rx_buffer[rx_length_tmp] = '\0';
+						}
+				}
+				
+				rst_wifi_num = 0;
 				rt_kprintf("AT+CWMODE_DEF=1\r\n");
 				rt_thread_delay( RT_TICK_PER_SECOND/5 );
 				result = rt_mq_recv(&rx_mq, &msg, sizeof(struct rx_msg), 80);
@@ -119,20 +140,26 @@ void usr_echo_thread_entry(void* parameter)
 						rx_length_tmp = rt_device_read(msg.dev, 0, &uart_rx_buffer[0], rx_length_tmp);
 						uart_rx_buffer[rx_length_tmp] = '\0';
 				}
-		}
-		
-		//连接路由器
-		rx_length_tmp = 128;
-		rt_kprintf(WIFI_CONNECT_CMD);
-		rt_thread_delay( RT_TICK_PER_SECOND * 10 );
-		result = rt_mq_recv(&rx_mq, &msg, sizeof(struct rx_msg), 80);
-		if (result == RT_EOK)
-		{
-				rx_length_tmp = rt_device_read(msg.dev, 0, &uart_rx_buffer[0], rx_length_tmp);
-				uart_rx_buffer[rx_length_tmp] = '\0';
-		}
-		while(rx_length_tmp < 2 || uart_rx_buffer[rx_length_tmp - 4] != 'O' || uart_rx_buffer[rx_length_tmp - 3] != 'K')
-		{
+				while(rx_length_tmp < 2 || uart_rx_buffer[rx_length_tmp - 4] != 'O' || uart_rx_buffer[rx_length_tmp - 3] != 'K')
+				{
+						rst_wifi_num++;
+						if(rst_wifi_num >= RST_WIFI_NUM)
+								break;
+						rt_kprintf("AT+CWMODE_DEF=1\r\n");
+						rt_thread_delay( RT_TICK_PER_SECOND/5 );
+						result = rt_mq_recv(&rx_mq, &msg, sizeof(struct rx_msg), 80);
+						if (result == RT_EOK)
+						{
+								rx_length_tmp = rt_device_read(msg.dev, 0, &uart_rx_buffer[0], rx_length_tmp);
+								uart_rx_buffer[rx_length_tmp] = '\0';
+						}
+				}
+				if(rst_wifi_num >= RST_WIFI_NUM)
+						continue;
+				
+				//连接路由器
+				rst_wifi_num = 0;
+				rx_length_tmp = 128;
 				rt_kprintf(WIFI_CONNECT_CMD);
 				rt_thread_delay( RT_TICK_PER_SECOND * 10 );
 				result = rt_mq_recv(&rx_mq, &msg, sizeof(struct rx_msg), 80);
@@ -141,36 +168,61 @@ void usr_echo_thread_entry(void* parameter)
 						rx_length_tmp = rt_device_read(msg.dev, 0, &uart_rx_buffer[0], rx_length_tmp);
 						uart_rx_buffer[rx_length_tmp] = '\0';
 				}
-		}
-		
-		//连接IP及端口号
-		rx_length_tmp = 128;
-		rt_kprintf(WIFI_IP_PORT);
-		rt_thread_delay( RT_TICK_PER_SECOND * 5 );
-		result = rt_mq_recv(&rx_mq, &msg, sizeof(struct rx_msg), 80);
-		if (result == RT_EOK)
-		{
-				rx_length_tmp = rt_device_read(msg.dev, 0, &uart_rx_buffer[0], rx_length_tmp);
-				uart_rx_buffer[rx_length_tmp] = '\0';
-		}
-		while(rx_length_tmp < 2 || uart_rx_buffer[rx_length_tmp - 4] != 'O' || uart_rx_buffer[rx_length_tmp - 3] != 'K')
-		{
+				while(rx_length_tmp < 2 || uart_rx_buffer[rx_length_tmp - 4] != 'O' || uart_rx_buffer[rx_length_tmp - 3] != 'K')
+				{
+						rst_wifi_num++;
+						if(rst_wifi_num >= RST_WIFI_NUM)
+								break;
+						rt_kprintf(WIFI_CONNECT_CMD);
+						rt_thread_delay( RT_TICK_PER_SECOND * 10 );
+						result = rt_mq_recv(&rx_mq, &msg, sizeof(struct rx_msg), 80);
+						if (result == RT_EOK)
+						{
+								rx_length_tmp = rt_device_read(msg.dev, 0, &uart_rx_buffer[0], rx_length_tmp);
+								uart_rx_buffer[rx_length_tmp] = '\0';
+						}
+				}
+				if(rst_wifi_num >= RST_WIFI_NUM)
+						continue;
+				
+				//连接IP及端口号
+				rst_wifi_num = 0;
+				rx_length_tmp = 128;
 				rt_kprintf(WIFI_IP_PORT);
 				rt_thread_delay( RT_TICK_PER_SECOND * 5 );
 				result = rt_mq_recv(&rx_mq, &msg, sizeof(struct rx_msg), 80);
 				if (result == RT_EOK)
 				{
-						rx_length_tmp = 128;
 						rx_length_tmp = rt_device_read(msg.dev, 0, &uart_rx_buffer[0], rx_length_tmp);
 						uart_rx_buffer[rx_length_tmp] = '\0';
 				}
-		}		
-
-		rt_kprintf("AT+CIPMODE=1\r\n");
-		rt_thread_delay( RT_TICK_PER_SECOND/10 );
-	
-		rt_kprintf("AT+CIPSEND\r\n");
-		rt_thread_delay( RT_TICK_PER_SECOND/10 );
+				while(rx_length_tmp < 2 || uart_rx_buffer[rx_length_tmp - 4] != 'O' || uart_rx_buffer[rx_length_tmp - 3] != 'K')
+				{
+						rst_wifi_num++;
+						if(rst_wifi_num >= RST_WIFI_NUM)
+								break;
+						rt_kprintf(WIFI_IP_PORT);
+						rt_thread_delay( RT_TICK_PER_SECOND * 5 );
+						result = rt_mq_recv(&rx_mq, &msg, sizeof(struct rx_msg), 80);
+						if (result == RT_EOK)
+						{
+								rx_length_tmp = 128;
+								rx_length_tmp = rt_device_read(msg.dev, 0, &uart_rx_buffer[0], rx_length_tmp);
+								uart_rx_buffer[rx_length_tmp] = '\0';
+						}
+				}		
+				if(rst_wifi_num >= RST_WIFI_NUM)
+						continue;
+				
+				rt_kprintf("AT+CIPMODE=1\r\n");
+				rt_thread_delay( RT_TICK_PER_SECOND/10 );
+			
+				rt_kprintf("AT+CIPSEND\r\n");
+				rt_thread_delay( RT_TICK_PER_SECOND/10 );
+				
+				break;
+		
+		}
 		
 		rt_sem_release(&send_lock_sem);//释放一次信号量
     while(1)
@@ -202,14 +254,14 @@ void usr_echo_thread_entry(void* parameter)
 								//回传数据
 //								rt_device_write(device, 0, &uart_rx_buffer[0], REV_DATA_LENGTH);
 								//OTA数据回复确认
-								rt_kprintf("ota ok,%x,%x\r\n",BEIGHBOR,THREDHOLD);
+//								rt_kprintf("ota ok,%x,%x\r\n",BEIGHBOR,THREDHOLD);
 						}
-						else if((rx_length == 5))//接收到心跳包
+						else if((rx_length != 0))//接收到心跳包
 						{
 								esp_rst_cnt = 0; //重启计数清零
 						}
 						
-						if(esp_rst_cnt > 15)//如果超过10次没有收到，证明连接已经中断                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+						while(esp_rst_cnt > 15)//如果超过10次没有收到，证明连接已经中断                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
 						{
 								esp_rst_flag = 1;//关闭wifi发送操作
 								//进行重连操作
@@ -220,6 +272,7 @@ void usr_echo_thread_entry(void* parameter)
 								
 								rt_thread_delay( RT_TICK_PER_SECOND * 5 );//复位后延时一段时间
 								
+//								rst_wifi_num = 0;
 								rx_length_tmp = 128;
 								rt_kprintf("AT\r\n");
 								rt_thread_delay( RT_TICK_PER_SECOND/5 );
@@ -231,6 +284,9 @@ void usr_echo_thread_entry(void* parameter)
 								}
 								while(rx_length_tmp < 2 || uart_rx_buffer[rx_length_tmp - 4] != 'O' || uart_rx_buffer[rx_length_tmp - 3] != 'K')
 								{
+//										rst_wifi_num++;
+//										if(rst_wifi_num >= RST_WIFI_NUM)
+//												break;
 										rt_kprintf("AT\r\n");
 										rt_thread_delay( RT_TICK_PER_SECOND/5 );
 										result = rt_mq_recv(&rx_mq, &msg, sizeof(struct rx_msg), 80);
@@ -240,8 +296,12 @@ void usr_echo_thread_entry(void* parameter)
 												uart_rx_buffer[rx_length_tmp] = '\0';
 										}
 								}
+//								if(rst_wifi_num >= RST_WIFI_NUM)
+//										continue;
+								
 								//2.进行AT指令连接
 		//						rt_kprintf("AT+CIPSTART=\"TCP\",\"192.168.2.83\",%d\r\n", PORT);
+								rst_wifi_num = 0;
 								rx_length_tmp = 128;
 								rt_kprintf(WIFI_IP_PORT);
 								rt_thread_delay( RT_TICK_PER_SECOND * 5 );
@@ -253,6 +313,9 @@ void usr_echo_thread_entry(void* parameter)
 								}
 								while(rx_length_tmp < 2 || uart_rx_buffer[rx_length_tmp - 4] != 'O' || uart_rx_buffer[rx_length_tmp - 3] != 'K')
 								{
+										rst_wifi_num++;
+										if(rst_wifi_num >= RST_WIFI_NUM)
+												break;
 										rt_kprintf(WIFI_IP_PORT);
 										rt_thread_delay( RT_TICK_PER_SECOND * 5 );
 										result = rt_mq_recv(&rx_mq, &msg, sizeof(struct rx_msg), 80);
@@ -263,7 +326,8 @@ void usr_echo_thread_entry(void* parameter)
 												uart_rx_buffer[rx_length_tmp] = '\0';
 										}
 								}		
-
+								if(rst_wifi_num >= RST_WIFI_NUM)
+										continue;
 							
 								rt_kprintf("AT+CIPMODE=1\r\n");
 								rt_thread_delay( RT_TICK_PER_SECOND/10 );
@@ -282,6 +346,8 @@ void usr_echo_thread_entry(void* parameter)
 								
 								esp_rst_flag = 0;//打开wifi发送操作
 								esp_rst_cnt = 0;//计数值清零
+								
+								break;
 						}
 
 							

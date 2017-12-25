@@ -5,11 +5,12 @@
 #include "led.h"
 #include "esp8266.h"
 
+
 /*  变量分配4字节对齐 */
 ALIGN(RT_ALIGN_SIZE)
 
 //定义与发送数据包相关的量
-#define SENSOR_ID  39
+#define SENSOR_ID  9
 #define SORSOR_DATA_LENGTH 141
 
 //传感器数组
@@ -89,7 +90,11 @@ void mlx_thread_entry(void* paramete)
 				rt_thread_delay( RT_TICK_PER_SECOND/1 );
 			
 				rt_enter_critical();
-//				MLX90621IR_ReadSead();
+			
+		#if defined(USING_MLX90621)
+				MLX90621IR_ReadSead();
+		#endif
+			
 				rt_exit_critical();
 				if(!esp_rst_flag)
 						rt_sem_release(&lock_sem);//释放一次信号量
