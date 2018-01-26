@@ -445,6 +445,16 @@
               <FileType>1</FileType>
               <FilePath>.\drivers\flash.c</FilePath>
             </File>
+            <File>
+              <FileName>zet07.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\drivers\zet07.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_sht2x.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\drivers\bsp_sht2x.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

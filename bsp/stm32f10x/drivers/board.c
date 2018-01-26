@@ -22,6 +22,7 @@
 #include "usart.h"
 
 #include "I2C2.h"
+#include "bsp_sht2x.h"
 
 #ifdef  RT_USING_COMPONENTS_INIT
 #include <components.h>
@@ -204,9 +205,13 @@ void rt_hw_board_init(void)
 				THREDHOLD = temp_data[3];
 		}
 	
-#if defined(USING_MLX90621)
+#if defined(USING_MLX90621)//如果使用红外传感器
 		MLX90621_WorkInit();
     BackgroundInit();
+#endif
+		
+#if defined(USING_TS_SHT20)//如果使用温湿度传感器
+		Bsp_ShtInit();
 #endif
 
 #ifdef RT_USING_COMPONENTS_INIT

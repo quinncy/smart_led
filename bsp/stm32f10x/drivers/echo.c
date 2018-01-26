@@ -5,7 +5,7 @@
 #include "I2C2.h"
 #include "flash.h"
 
-extern struct rt_semaphore send_lock_sem;//用于阻塞mlx线程
+extern struct rt_semaphore send_lock_sem;//用于阻塞module线程
 extern int PORT;
 
 //全局变量
@@ -100,7 +100,7 @@ void usr_echo_thread_entry(void* parameter)
    
 		//初始化8266
 		//WIFI连接大循环
-		while(1)
+		while(0)
 		{
 				GPIO_ResetBits(ESP_RST_gpio, ESP_RST_pin);
 				rt_thread_delay( RT_TICK_PER_SECOND / 5 );

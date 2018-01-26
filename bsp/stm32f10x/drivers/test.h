@@ -9,7 +9,7 @@
 
 rt_err_t demo_thread_creat(void);
 
-void mlx_thread_entry(void* paramete);
+void module_thread_entry(void* paramete);
 
 void esp8266_thread_entry(void* parameter);
 
