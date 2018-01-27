@@ -23,6 +23,9 @@
 
 #include "I2C2.h"
 #include "bsp_sht2x.h"
+#include "voice.h"
+#include "smoke_fog.h"
+#include "tosic_gas.h"
 
 #ifdef  RT_USING_COMPONENTS_INIT
 #include <components.h>
@@ -212,6 +215,18 @@ void rt_hw_board_init(void)
 		
 #if defined(USING_TS_SHT20)//如果使用温湿度传感器
 		Bsp_ShtInit();
+#endif
+		
+#if defined(USING_VOICE)//如果使用声音传感器
+		Voice_Init();
+#endif
+		
+#if defined(USING_SMOKE_FOG)//如果使用烟雾传感器
+		Smoke_Fog_Init();
+#endif
+
+#if defined(USING_TOSIC_GAS)//如果使用毒害气体传感器
+		Tosic_Gas_Init();
 #endif
 
 #ifdef RT_USING_COMPONENTS_INIT

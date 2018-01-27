@@ -455,6 +455,21 @@
               <FileType>1</FileType>
               <FilePath>.\drivers\bsp_sht2x.c</FilePath>
             </File>
+            <File>
+              <FileName>voice.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\drivers\voice.c</FilePath>
+            </File>
+            <File>
+              <FileName>smoke_fog.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\drivers\smoke_fog.c</FilePath>
+            </File>
+            <File>
+              <FileName>tosic_gas.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\drivers\tosic_gas.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

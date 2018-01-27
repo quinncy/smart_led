@@ -6,6 +6,9 @@
 #include "esp8266.h"
 #include "zet07.h"
 #include "bsp_sht2x.h"
+#include "voice.h"
+#include "smoke_fog.h"
+#include "tosic_gas.h"
 
 /*  变量分配4字节对齐 */
 ALIGN(RT_ALIGN_SIZE)
@@ -14,8 +17,10 @@ ALIGN(RT_ALIGN_SIZE)
 #define SENSOR_ID  30
 #define SORSOR_DATA_LENGTH 141
 
+#if defined(USING_MLX90621)
 //传感器数组
 static char sensor_data_buff[150];
+#endif
 
 /*  静态线程的 线程堆栈*/
 static rt_uint8_t module_stack[512];
@@ -34,11 +39,24 @@ extern vu8 esp_rst_cnt;
 extern char Binaryzation_8byte[8];
 extern short   IMAGE[NROWS][NCOLS];
 
+#if defined(USING_VOICE)//如果使用声音传感器
+		rt_uint8_t voice_value; 
+#endif
+
+#if defined(USING_SMOKE_FOG)//如果使用烟雾传感器
+		rt_uint8_t smoke_fog_value;
+#endif
+
+#if defined(USING_TOSIC_GAS)//如果使用毒害气体传感器
+		rt_uint8_t tosic_gas_value;
+#endif
+
 #if defined(USING_TS_SHT20)//如果使用温湿度传感器
 //温湿度传感器结构体定义
 SHT_DATA_TYPE SHTxxVal;
 #endif
 
+#if defined(USING_CO_ZE07)
 struct CO_rx_msg
 {
     rt_device_t dev;
@@ -61,10 +79,13 @@ rt_err_t CO_uart_input(rt_device_t dev, rt_size_t size)
     return RT_EOK;
 }
 
+#endif
 
 rt_err_t demo_thread_creat(void)
 {
     rt_err_t result;
+		
+	#if defined(USING_CO_ZE07)
 		//初始化用于CO的消息队列
 		result = rt_mq_init(&CO_rx_mq, "CO_mqt", &CO_msg_pool[0], 128 - sizeof(void*), sizeof(CO_msg_pool), RT_IPC_FLAG_FIFO);
 	
@@ -73,6 +94,8 @@ rt_err_t demo_thread_creat(void)
         rt_kprintf("init message queue failed.\n"); 
         return -1; 
     }
+	#endif	
+	
     /* 初始化静态信号量，初始值是0 */
     result = rt_sem_init(&lock_sem, "locksem", 0, RT_IPC_FLAG_FIFO);
     if (result != RT_EOK)
@@ -189,6 +212,18 @@ void module_thread_entry(void* paramete)
 				
 		#if defined(USING_TS_SHT20)//如果使用温湿度传感器
 				Bsp_ShtMeasureOnce(&SHTxxVal);
+		#endif
+			
+		#if defined(USING_VOICE)//如果使用声音传感器
+				voice_value = Voice_MeasureOnce();
+		#endif
+				
+		#if defined(USING_SMOKE_FOG)//如果使用烟雾传感器
+				smoke_fog_value = Smoke_Fog_MeasureOnce();
+		#endif
+				
+		#if defined(USING_TOSIC_GAS)//如果使用毒害气体传感器
+				tosic_gas_value = Tosic_Gas_MeasureOnce();
 		#endif
 			
 				rt_exit_critical();
